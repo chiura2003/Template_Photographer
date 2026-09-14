@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Settings\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
 class SettingForm
@@ -14,11 +14,6 @@ class SettingForm
         return $schema
             ->components([
                 TextInput::make('photographer_name')
-                    ->required(),
-
-                TextInput::make('email')
-                    ->label('Email address')
-                    ->email()
                     ->required(),
 
                 TextInput::make('phone')
@@ -33,10 +28,8 @@ class SettingForm
                 TextInput::make('instagram_url')
                     ->url(),
 
-                TextInput::make('facebook_url')
-                    ->url(),
-
-                TextInput::make('website_url')
+                TextInput::make('vimeo')
+                    ->label('Vimeo URL')
                     ->url(),
             ]);
     }

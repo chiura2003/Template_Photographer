@@ -11,3 +11,6 @@ Route::get('/Personal/{album:slug}', [PublicController::class, 'personalAlbum'])
 Route::get('/About', [PublicController::class, 'about'])->name('about');
 Route::get('/About/profile-image', [PublicController::class, 'aboutProfileImage'])->name('about.profile-image');
 Route::get('/Contact', [PublicController::class, 'contact'])->name('contact');
+Route::post('/Contact', [PublicController::class, 'contactSubmit'])
+    ->middleware('throttle:5,1')
+    ->name('contact.submit');

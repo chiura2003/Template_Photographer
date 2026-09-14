@@ -13,8 +13,6 @@
                 ->get()
                 ->groupBy('year')
             : collect();
-
-        $placeholderCover = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2 3'%3E%3Crect width='2' height='3' fill='%23e7e1d8'/%3E%3C/svg%3E";
     @endphp
 
     <div class="content-wrapper">
@@ -27,13 +25,26 @@
                 @foreach ($albums as $album)
                     <a
                         href="{{ route('work.album', $album) }}"
-                        class="work-album-link"
+                        class="work-album-card"
                         aria-label="Apri l'album {{ $album->title }}"
                     >
-                        <img
-                            src="{{ $album->coverPhoto?->image_url ?: $placeholderCover }}"
-                            alt="{{ $album->coverPhoto?->alt_text ?: $album->title . ' - work photography project' }}"
-                        >
+                        @if ($album->coverPhoto?->image_url)
+                            <div class="work-album-image">
+                                <img
+                                    src="{{ $album->coverPhoto->image_url }}"
+                                    alt="{{ $album->coverPhoto->alt_text ?: $album->title . ' - work photography project' }}"
+                                >
+                            </div>
+                        @else
+                            <div class="work-album-image work-album-image--empty" aria-hidden="true">
+                                <span>Cover image coming soon</span>
+                            </div>
+                        @endif
+
+                        <div class="work-album-info">
+                            <h3>{{ $album->title }}</h3>
+                            <span>{{ $album->year }}</span>
+                        </div>
                     </a>
                 @endforeach
             </x-year-gallery>

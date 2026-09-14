@@ -20,8 +20,8 @@ class SettingsTable
                 TextColumn::make('photographer_name')
                     ->label('Fotografo'),
 
-                TextColumn::make('email')
-                    ->label('Email'),
+                TextColumn::make('vimeo')
+                    ->label('Vimeo'),
 
                 TextColumn::make('phone')
                     ->label('Telefono'),

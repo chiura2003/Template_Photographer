@@ -18,6 +18,28 @@
                     @else
                         <p class="about-empty">La biografia sarà disponibile a breve.</p>
                     @endif
+
+                    @if (filled($setting?->phone) || filled($setting?->instagram_url))
+                        <div class="about-section about-contact">
+                            @if (filled($setting?->phone))
+                                <div class="about-contact-item">
+                                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                                    <span class="about-contact-label">TELEFONO</span>
+                                    <a href="tel:{{ str_replace(' ', '', $setting->phone) }}">{{ $setting->phone }}</a>
+                                </div>
+                            @endif
+
+                            @if (filled($setting?->instagram_url))
+                                <div class="about-contact-item">
+                                    <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+                                    <span class="about-contact-label">INSTAGRAM</span>
+                                    <a href="{{ $setting->instagram_url }}" target="_blank" rel="noopener noreferrer">
+                                        {{ str_replace(['https://', 'http://', '@', 'www.instagram.com/'], ['', '', '', ''], $setting->instagram_url) }}
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
