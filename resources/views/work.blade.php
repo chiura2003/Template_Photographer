@@ -33,6 +33,12 @@
                                 <img
                                     src="{{ $album->coverPhoto->image_url }}"
                                     alt="{{ $album->coverPhoto->alt_text ?: $album->title . ' - work photography project' }}"
+                                    @if ($loop->parent && $loop->parent->first && $loop->first)
+                                        fetchpriority="high"
+                                    @else
+                                        loading="lazy"
+                                        decoding="async"
+                                    @endif
                                 >
                             </div>
                         @else

@@ -14,6 +14,12 @@
                             alt="{{ $photo->filename }}"
                             role="button"
                             tabindex="0"
+                            @if ($sectionIndex === 0 && $index === 0)
+                                fetchpriority="high"
+                            @else
+                                loading="lazy"
+                                decoding="async"
+                            @endif
                         >
                     </div>
                 @endforeach

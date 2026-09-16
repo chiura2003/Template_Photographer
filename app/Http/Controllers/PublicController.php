@@ -12,6 +12,7 @@ use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -20,9 +21,7 @@ class PublicController extends Controller
 {
     public function homepage()
     {
-        $setting = Schema::hasTable('settings')
-            ? Setting::query()->first()
-            : null;
+        $setting = Setting::current();
 
         if (! Schema::hasTable('photos') || ! Schema::hasTable('albums')) {
             return view('homepage', [
@@ -49,14 +48,14 @@ class PublicController extends Controller
     public function work()
     {
         return view('work', [
-            'setting' => Schema::hasTable('settings') ? Setting::query()->first() : null,
+            'setting' => Setting::current(),
         ]);
     }
 
     public function personal()
     {
         return view('personal', [
-            'setting' => Schema::hasTable('settings') ? Setting::query()->first() : null,
+            'setting' => Setting::current(),
         ]);
     }
 
@@ -72,31 +71,40 @@ class PublicController extends Controller
 
     public function about()
     {
-        $setting = Schema::hasTable('settings')
-            ? Setting::query()->first()
-            : null;
+        $setting = Setting::current();
         $hasProfileImage = $setting?->profile_image
             && Storage::disk('private')->exists($setting->profile_image);
 
         return view('about', compact('setting', 'hasProfileImage'));
     }
 
-    public function aboutProfileImage()
+    public function aboutProfileImage(Request $request)
     {
-        abort_unless(Schema::hasTable('settings'), 404);
+        abort_unless(Setting::tableExists(), 404);
 
-        $setting = Setting::query()->first();
+        $setting = Setting::current();
 
         abort_unless($setting?->profile_image && Storage::disk('private')->exists($setting->profile_image), 404);
 
-        return Storage::disk('private')->response($setting->profile_image);
+        $disk = Storage::disk('private');
+
+        $response = $disk->response($setting->profile_image);
+        $response->headers->set('Cache-Control', 'public, max-age=3600');
+        $response->setLastModified(new \DateTimeImmutable('@'.$disk->lastModified($setting->profile_image)));
+
+        if ($response->isNotModified($request)) {
+            return new Response(null, Response::HTTP_NOT_MODIFIED, [
+                'Cache-Control' => 'public, max-age=3600',
+                'Last-Modified' => $response->headers->get('Last-Modified'),
+            ]);
+        }
+
+        return $response;
     }
 
     public function contact()
     {
-        $setting = Schema::hasTable('settings')
-            ? Setting::query()->first()
-            : null;
+        $setting = Setting::current();
 
         return view('contact', compact('setting'));
     }
@@ -115,9 +123,7 @@ class PublicController extends Controller
             'message' => $data['message'],
         ]);
 
-        $recipient = Schema::hasTable('settings')
-            ? Setting::query()->value('email')
-            : null;
+        $recipient = Setting::current()?->email;
 
         try {
             Mail::to($recipient ?: config('services.contact.recipient'))

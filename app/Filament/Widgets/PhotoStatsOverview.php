@@ -26,9 +26,13 @@ class PhotoStatsOverview extends StatsOverviewWidget
             ->groupBy('type')
             ->pluck('aggregate', 'type');
 
-        $totalAlbums = Album::query()->count();
+        $totalAlbums = array_sum($albumTypeCounts->all());
         $personalAlbums = (int) ($albumTypeCounts[AlbumType::Personal->value] ?? 0);
         $workAlbums = (int) ($albumTypeCounts[AlbumType::Work->value] ?? 0);
+
+        $photoCounts = Photo::query()
+            ->selectRaw('count(*) as total, coalesce(sum(is_published), 0) as published, coalesce(sum(is_homepage), 0) as homepage')
+            ->first();
 
         return [
             Stat::make('Album totali', $this->formatCount($totalAlbums))
@@ -36,19 +40,15 @@ class PhotoStatsOverview extends StatsOverviewWidget
                 ->icon(Heroicon::OutlinedRectangleGroup)
                 ->color('warning'),
 
-            Stat::make('Foto totali', $this->formatCount(Photo::query()->count()))
+            Stat::make('Foto totali', $this->formatCount((int) $photoCounts->total))
                 ->icon(Heroicon::OutlinedPhoto)
                 ->color('gray'),
 
-            Stat::make('Foto pubblicate', $this->formatCount(
-                Photo::query()->where('is_published', true)->count()
-            ))
+            Stat::make('Foto pubblicate', $this->formatCount((int) $photoCounts->published))
                 ->icon(Heroicon::OutlinedCheckCircle)
                 ->color('success'),
 
-            Stat::make('Foto in homepage', $this->formatCount(
-                Photo::query()->where('is_homepage', true)->count()
-            ))
+            Stat::make('Foto in homepage', $this->formatCount((int) $photoCounts->homepage))
                 ->icon(Heroicon::OutlinedHome)
                 ->color('warning'),
         ];

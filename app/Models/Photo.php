@@ -10,8 +10,6 @@ class Photo extends Model
 {
     public const HOMEPAGE_LIMIT = 18;
 
-    protected $appends = ['image_url'];
-
     protected $fillable = [
         'album_id',
         'title',

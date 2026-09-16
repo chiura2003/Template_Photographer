@@ -23,6 +23,12 @@
                         alt="{{ $photo->alt_text ?: $photo->title ?: $album->title }}"
                         role="button"
                         tabindex="0"
+                        @if ($loop->first)
+                            fetchpriority="high"
+                        @else
+                            loading="lazy"
+                            decoding="async"
+                        @endif
                     >
                 </figure>
 

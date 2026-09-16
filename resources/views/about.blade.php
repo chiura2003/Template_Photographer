@@ -9,10 +9,11 @@
                 @if ($hasProfileImage)
                     <aside class="about-image">
                         <img
-                            src="{{ route('about.profile-image') }}"
+src="{{ route('about.profile-image') }}"
                             alt="{{ $setting->photographer_name ?: 'Fotografo' }}"
                             data-reveal
-                        >
+                            fetchpriority="high"
+>
 
                         <x-contact-icons :setting="$setting" />
                     </aside>
