@@ -16,7 +16,7 @@
                     <div class="album-photo-grid">
                 @endif
 
-                <figure>
+                <figure data-reveal>
                     <img
                         class="lightbox-trigger"
                         src="{{ $photo->image_url }}"

@@ -46,7 +46,7 @@ class ContactFormTest extends TestCase
         $response = $this->post(route('contact.submit'), [
             'name' => 'Mario Rossi',
             'email' => 'mario@example.com',
-            'message' => 'Ciao Tommaso, vorrei prenotare un servizio fotografico.',
+            'message' => 'Ciao, vorrei prenotare un servizio fotografico.',
         ]);
 
         $response->assertRedirect();
@@ -64,7 +64,7 @@ class ContactFormTest extends TestCase
         $response = $this->post(route('contact.submit'), [
             'name' => 'Mario Rossi',
             'email' => 'mario@example.com',
-            'message' => 'Ciao Tommaso, vorrei prenotare un servizio fotografico.',
+            'message' => 'Ciao, vorrei prenotare un servizio fotografico.',
             'website' => '',
         ]);
 

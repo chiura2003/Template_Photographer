@@ -9,11 +9,13 @@ class Setting extends Model
 {
     protected $fillable = [
         'photographer_name',
+        'email',
         'phone',
         'bio',
         'profile_image',
         'instagram_url',
         'vimeo',
+        'location',
     ];
 
     protected static function booted(): void

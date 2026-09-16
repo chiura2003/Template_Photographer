@@ -28,7 +28,6 @@ class AlbumFactory extends Factory
             'year' => fake()->numberBetween(2022, now()->year),
             'type' => fake()->randomElement(AlbumType::cases())->value,
             'description' => fake()->paragraph(),
-            'cover_image' => null,
             'featured' => false,
             'is_published' => true,
             'sort_order' => 0,

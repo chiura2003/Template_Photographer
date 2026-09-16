@@ -12,23 +12,13 @@
 
         <div class="contact-card">
 
-            <div class="contact-item">
-
-                <span class="contact-label">EMAIL</span>
-
-                <a href="mailto:fiogallery@gmail.com">
-                    fiogallery@gmail.com
-                </a>
-
-            </div>
-
             @if (filled($setting?->instagram_url))
                 <div class="contact-item">
 
                     <span class="contact-label">INSTAGRAM</span>
 
                     <a href="{{ $setting->instagram_url }}" target="_blank" rel="noopener noreferrer">
-                        {{ str_replace(['https://', 'http://', '@', 'www.instagram.com/'], ['', '', '', ''], $setting->instagram_url) }}
+                        {{ '@' . rtrim(str_replace(['https://', 'http://', '@', 'www.instagram.com/', 'instagram.com/'], ['', '', '', '', ''], $setting->instagram_url), '/') }}
                     </a>
 
                 </div>
@@ -60,9 +50,17 @@
 
             <div class="contact-item">
 
+                <span class="contact-label">EMAIL</span>
+
+                <span>{{ $setting?->email ?: 'fiogallery@gmail.com' }}</span>
+
+            </div>
+
+            <div class="contact-item">
+
                 <span class="contact-label">LOCATION</span>
 
-                <span>Modena, Italy</span>
+                <span>{{ $setting?->location ?: 'Modena, Italy' }}</span>
 
             </div>
 
@@ -88,7 +86,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('contact.submit') }}">
+            <form method="POST" action="{{ route('contact.submit') }}" data-contact-form>
 
                 @csrf
 

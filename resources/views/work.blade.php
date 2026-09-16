@@ -15,7 +15,7 @@
             : collect();
     @endphp
 
-    <div class="content-wrapper">
+    <div class="content-wrapper work-page">
         <div class="work-header">
             <h1>WORK</h1>
         </div>
@@ -29,7 +29,7 @@
                         aria-label="Apri l'album {{ $album->title }}"
                     >
                         @if ($album->coverPhoto?->image_url)
-                            <div class="work-album-image">
+                            <div class="work-album-image" data-reveal>
                                 <img
                                     src="{{ $album->coverPhoto->image_url }}"
                                     alt="{{ $album->coverPhoto->alt_text ?: $album->title . ' - work photography project' }}"
@@ -51,5 +51,7 @@
         @empty
             <p class="work-empty">No work projects are currently available.</p>
         @endforelse
+
+        <x-contact-icons :setting="$setting" />
     </div>
 </x-layout>

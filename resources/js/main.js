@@ -1,32 +1,51 @@
-document.querySelectorAll(".year-section").forEach(section => {
+document.querySelectorAll(".gallery-container").forEach(section => {
 
     const track = section.querySelector("[data-slider]");
     const viewport = section.querySelector(".gallery-viewport");
     const next = section.querySelector("[data-next]");
     const prev = section.querySelector("[data-prev]");
-    const dotsWrap = section.querySelector("[data-dots]");
+    const dotsWrap = section.nextElementSibling && section.nextElementSibling.matches(".gallery-dots")
+        ? section.nextElementSibling
+        : null;
 
     const images = track.querySelectorAll("img");
-    const visibleImages = 4;
+    const gap = 20;
     let currentIndex = 0;
 
     updateButtons();
 
+    function maxIndex(){
+        return Math.max(0, images.length - 1);
+    }
+
     function updateButtons(){
         prev.disabled = currentIndex === 0;
-        next.disabled = currentIndex >= images.length - visibleImages;
+        next.disabled = currentIndex >= maxIndex();
+    }
+
+    function updateDots() {
+        if (!dotsWrap) return;
+        const dots = dotsWrap.querySelectorAll(".gallery-dot");
+        const step = track.children[0] ? track.children[0].offsetWidth + gap : 1;
+        const isMobile = window.matchMedia("(max-width: 575.98px)").matches;
+        const active = isMobile
+            ? Math.max(0, Math.min(dots.length - 1, Math.round(viewport.scrollLeft / step)))
+            : currentIndex;
+        dots.forEach((dot, i) => {
+            dot.classList.toggle("is-active", i === active);
+        });
     }
 
     function updateSlider() {
-        const imageWidth = images[0].offsetWidth;
-        const gap = 20;
-        const distance = currentIndex * (imageWidth + gap);
+        const cardWidth = track.children[0].offsetWidth;
+        const distance = currentIndex * (cardWidth + gap);
         track.style.transform = `translateX(-${distance}px)`;
         updateButtons();
+        updateDots();
     }
 
     next.addEventListener("click", () => {
-        if(currentIndex < images.length - visibleImages){
+        if(currentIndex < maxIndex()){
             currentIndex++;
             updateSlider();
         }
@@ -39,23 +58,51 @@ document.querySelectorAll(".year-section").forEach(section => {
         }
     });
 
-    /* --- puntini di paginazione (mobile) --- */
+    /* --- puntini di paginazione (uno per album, mobile e desktop) --- */
     if (dotsWrap) {
-        const totalPages = Math.max(1, Math.round(track.scrollWidth / viewport.clientWidth));
+        const mqMobile = window.matchMedia("(max-width: 575.98px)");
 
-        for (let i = 0; i < totalPages; i++) {
-            const dot = document.createElement("span");
-            dot.className = "gallery-dot";
-            if (i === 0) dot.classList.add("is-active");
-            dotsWrap.appendChild(dot);
+        function buildDots() {
+            const totalPages = Math.max(1, images.length);
+
+            dotsWrap.innerHTML = "";
+
+            for (let i = 0; i < totalPages; i++) {
+                const dot = document.createElement("span");
+                dot.className = "gallery-dot";
+                dot.setAttribute("role", "button");
+                dot.setAttribute("tabindex", "0");
+                dot.setAttribute("aria-label", `Vai all'album ${i + 1} di ${totalPages}`);
+                dot.addEventListener("click", () => {
+                    if (mqMobile.matches) {
+                        const step = track.children[0].offsetWidth + gap;
+                        viewport.scrollTo({ left: i * step, behavior: "smooth" });
+                    } else {
+                        currentIndex = i;
+                        updateSlider();
+                    }
+                });
+                dot.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        dot.click();
+                    }
+                });
+                dotsWrap.appendChild(dot);
+            }
+
+            updateDots();
         }
 
-        const dots = dotsWrap.querySelectorAll(".gallery-dot");
+        buildDots();
 
-        viewport.addEventListener("scroll", () => {
-            const page = Math.round(viewport.scrollLeft / viewport.clientWidth);
-            dots.forEach((dot, i) => dot.classList.toggle("is-active", i === page));
+        mqMobile.addEventListener("change", () => {
+            currentIndex = Math.min(currentIndex, maxIndex());
+            buildDots();
+            updateSlider();
         });
+
+        viewport.addEventListener("scroll", updateDots, { passive: true });
     }
 
     /* --- piccolo "nudge" per far capire che si può scorrere (mobile) --- */
@@ -184,3 +231,131 @@ document.addEventListener("keydown",(e)=>{
 
 });
 }
+
+/*==================================
+TOAST
+==================================*/
+
+const toastStack = (() => {
+    let stack = document.querySelector("[data-toast-stack]");
+    if (!stack) {
+        stack = document.createElement("div");
+        stack.className = "toast-stack";
+        stack.setAttribute("data-toast-stack", "");
+        stack.setAttribute("aria-live", "polite");
+        document.body.appendChild(stack);
+    }
+    return stack;
+})();
+
+const TOAST_ICONS = {
+    success: "fa-solid fa-circle-check",
+    error: "fa-solid fa-circle-exclamation",
+};
+
+function showToast(message, type = "success") {
+    const toast = document.createElement("div");
+    toast.className = `toast toast--${type}`;
+    toast.setAttribute("role", type === "error" ? "alert" : "status");
+
+    toast.innerHTML = `
+        <span class="toast-icon"><i class="${TOAST_ICONS[type]}" aria-hidden="true"></i></span>
+        <p class="toast-message"></p>
+        <button class="toast-close" type="button" aria-label="Chiudi">&times;</button>
+    `;
+    toast.querySelector(".toast-message").textContent = message;
+
+    toastStack.appendChild(toast);
+
+    const remove = () => {
+        if (toast.dataset.leaving) return;
+        toast.dataset.leaving = "true";
+        toast.classList.add("toast--leaving");
+        toast.addEventListener("animationend", () => toast.remove(), { once: true });
+        setTimeout(() => toast.remove(), 400);
+    };
+
+    toast.querySelector(".toast-close").addEventListener("click", remove);
+    setTimeout(remove, type === "error" ? 8000 : 5000);
+}
+
+/*==================================
+CONTACT FORM (AJAX)
+==================================*/
+
+const contactForm = document.querySelector("[data-contact-form]");
+
+if (contactForm) {
+    function clearFieldErrors() {
+        contactForm.querySelectorAll(".contact-form-field-error").forEach(span => span.remove());
+    }
+
+    function setFieldErrors(errors) {
+        for (const key of Object.keys(errors)) {
+            const input = contactForm.querySelector(`[name="${key}"]`);
+            if (!input || !errors[key].length) continue;
+
+            const span = document.createElement("span");
+            span.className = "contact-form-field-error";
+            span.textContent = errors[key][0];
+            input.insertAdjacentElement("afterend", span);
+        }
+    }
+
+    contactForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearFieldErrors();
+
+        const button = contactForm.querySelector("button[type='submit']");
+        button.disabled = true;
+
+        try {
+            const response = await fetch(contactForm.action, {
+                method: "POST",
+                headers: { Accept: "application/json" },
+                body: new FormData(contactForm),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.ok) {
+                contactForm.reset();
+                showToast("Grazie per il tuo messaggio. Ti risponderò al più presto.", "success");
+            } else if (response.status === 422) {
+                setFieldErrors(data.errors || {});
+                showToast("Impossibile inviare il messaggio: controlla i campi segnalati.", "error");
+            } else {
+                showToast("Invio non riuscito. Riprova più tardi.", "error");
+            }
+        } catch {
+            showToast("Invio non riuscito. Riprova più tardi.", "error");
+        } finally {
+            button.disabled = false;
+        }
+    });
+}
+
+/*==================================
+IMMAGINI — REVEAL PROGRESSIVO
+==================================*/
+
+document.querySelectorAll("[data-reveal]").forEach((target, index) => {
+    const img = target.matches("img") ? target : target.querySelector("img");
+
+    if (!img) {
+        target.classList.add("is-loaded");
+        return;
+    }
+
+    target.style.setProperty("--reveal-delay", `${Math.min(index * 60, 900)}ms`);
+
+    const reveal = () => target.classList.add("is-loaded");
+
+    if (img.complete && img.naturalWidth > 0) {
+        requestAnimationFrame(() => requestAnimationFrame(reveal));
+    } else {
+        img.addEventListener("load", reveal, { once: true });
+        img.addEventListener("error", reveal, { once: true });
+        setTimeout(reveal, 4000);
+    }
+});

@@ -7,7 +7,7 @@
         @foreach ($homepagePhotos->chunk(9)->values() as $sectionIndex => $photos)
             <div class="photo-composition {{ $sectionIndex % 2 === 1 ? 'reversed' : '' }}">
                 @foreach ($photos->values() as $index => $photo)
-                    <div class="cell {{ $cellClasses[$index] ?? 'v1' }}">
+                    <div class="cell {{ $cellClasses[$index] ?? 'v1' }}" data-reveal>
                         <img
                             class="lightbox-trigger"
                             src="{{ $photo->image_url }}"
@@ -20,5 +20,6 @@
             </div>
         @endforeach
     </div>
+    <x-contact-icons :setting="$setting" />
     <x-lightbox />
 </x-layout>

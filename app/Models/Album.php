@@ -15,7 +15,6 @@ class Album extends Model
         'type',
         'slug',
         'description',
-        'cover_image',
         'cover_photo_id',
         'featured',
         'is_published',

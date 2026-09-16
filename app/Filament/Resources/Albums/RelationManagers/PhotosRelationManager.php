@@ -217,56 +217,61 @@ class PhotosRelationManager extends RelationManager
         $skippedInvalid = 0;
 
         foreach ($uploads as $upload) {
-            if (str_starts_with(basename($upload['path']), '._')) {
+            try {
+                if (str_starts_with(basename($upload['path']), '._')) {
+                    Storage::disk('public')->delete($upload['path']);
+                    $skippedInvalid++;
+
+                    continue;
+                }
+
+                $filenameKey = strtolower($upload['filename']);
+
+                if (isset($existingLookup[$filenameKey]) || isset($seenInUpload[$filenameKey])) {
+                    Storage::disk('public')->delete($upload['path']);
+                    $skippedDuplicates++;
+
+                    continue;
+                }
+
+                $metadata = $this->readImageMetadata($upload['path']);
+
+                if ($metadata === null) {
+                    Storage::disk('public')->delete($upload['path']);
+                    $skippedInvalid++;
+
+                    continue;
+                }
+
+                $converted = app(WebpConverter::class)->convert($upload['path']);
+
+                if ($converted !== null) {
+                    $upload['path'] = $converted['path'];
+                    $upload['filename'] = pathinfo($converted['path'], PATHINFO_BASENAME);
+                    $metadata['mime_type'] = $converted['mime_type'];
+                    $metadata['filesize'] = $converted['filesize'];
+                }
+
+                Photo::query()->create([
+                    'album_id' => $ownerRecord->getKey(),
+                    'filename' => $upload['filename'],
+                    'filepath' => $upload['path'],
+                    'mime_type' => $metadata['mime_type'],
+                    'filesize' => $metadata['filesize'],
+                    'width' => $metadata['width'],
+                    'height' => $metadata['height'],
+                    'sort_order' => $nextSortOrder++,
+                    'is_published' => true,
+                    'is_homepage' => false,
+                    'homepage_order' => 0,
+                ]);
+
+                $seenInUpload[$filenameKey] = true;
+                $created++;
+            } catch (\Throwable) {
                 Storage::disk('public')->delete($upload['path']);
                 $skippedInvalid++;
-
-                continue;
             }
-
-            $filenameKey = strtolower($upload['filename']);
-
-            if (isset($existingLookup[$filenameKey]) || isset($seenInUpload[$filenameKey])) {
-                Storage::disk('public')->delete($upload['path']);
-                $skippedDuplicates++;
-
-                continue;
-            }
-
-            $metadata = $this->readImageMetadata($upload['path']);
-
-            if ($metadata === null) {
-                Storage::disk('public')->delete($upload['path']);
-                $skippedInvalid++;
-
-                continue;
-            }
-
-            $converted = app(WebpConverter::class)->convert($upload['path']);
-
-            if ($converted !== null) {
-                $upload['path'] = $converted['path'];
-                $upload['filename'] = pathinfo($converted['path'], PATHINFO_BASENAME);
-                $metadata['mime_type'] = $converted['mime_type'];
-                $metadata['filesize'] = $converted['filesize'];
-            }
-
-            Photo::query()->create([
-                'album_id' => $ownerRecord->getKey(),
-                'filename' => $upload['filename'],
-                'filepath' => $upload['path'],
-                'mime_type' => $metadata['mime_type'],
-                'filesize' => $metadata['filesize'],
-                'width' => $metadata['width'],
-                'height' => $metadata['height'],
-                'sort_order' => $nextSortOrder++,
-                'is_published' => true,
-                'is_homepage' => false,
-                'homepage_order' => 0,
-            ]);
-
-            $seenInUpload[$filenameKey] = true;
-            $created++;
         }
 
         $this->sendUploadNotification($created, $skippedDuplicates, $skippedInvalid);

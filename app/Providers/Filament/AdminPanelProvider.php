@@ -26,8 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->globalSearch(false)
             ->login()
-            ->brandName('Dashboard Fiorini')
-            ->registration()
+            ->brandName('Dashboard')
             ->colors([
                 'primary' => [
                     50 => 'oklch(0.984 0.012 95.25)',

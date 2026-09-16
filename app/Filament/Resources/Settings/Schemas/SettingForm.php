@@ -12,18 +12,14 @@ class SettingForm
     public static function configure(Schema $schema): Schema
     {
         return $schema
+            ->columns(2)
             ->components([
                 TextInput::make('photographer_name')
-                    ->required(),
+                    ->label('Nome Fotografo'),
 
-                TextInput::make('phone')
-                    ->tel(),
-
-                Textarea::make('bio')
-                    ->columnSpanFull(),
-
-                FileUpload::make('profile_image')
-                    ->image(),
+                TextInput::make('email')
+                    ->label('Email')
+                    ->rules(['email']),
 
                 TextInput::make('instagram_url')
                     ->url(),
@@ -31,6 +27,23 @@ class SettingForm
                 TextInput::make('vimeo')
                     ->label('Vimeo URL')
                     ->url(),
+
+                TextInput::make('location')
+                    ->label('Località'),
+
+                TextInput::make('phone')
+                    ->label('Telefono')
+                    ->telRegex('/^[0-9+()\-. ]{5,20}$/')
+                    ->tel(),
+
+                Textarea::make('bio')
+                    ->columnSpanFull()
+                    ->rows(10),
+
+                FileUpload::make('profile_image')
+                    ->label('Foto profilo')
+                    ->image()
+                    ->columnSpanFull(),
             ]);
     }
 }

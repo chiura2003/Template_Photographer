@@ -9,7 +9,9 @@ use App\Models\Album;
 use App\Models\Contact;
 use App\Models\Photo;
 use App\Models\Setting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -18,9 +20,14 @@ class PublicController extends Controller
 {
     public function homepage()
     {
+        $setting = Schema::hasTable('settings')
+            ? Setting::query()->first()
+            : null;
+
         if (! Schema::hasTable('photos') || ! Schema::hasTable('albums')) {
             return view('homepage', [
                 'homepagePhotos' => collect(),
+                'setting' => $setting,
             ]);
         }
 
@@ -35,17 +42,22 @@ class PublicController extends Controller
 
         return view('homepage', [
             'homepagePhotos' => $homepagePhotos,
+            'setting' => $setting,
         ]);
     }
 
     public function work()
     {
-        return view('work');
+        return view('work', [
+            'setting' => Schema::hasTable('settings') ? Setting::query()->first() : null,
+        ]);
     }
 
     public function personal()
     {
-        return view('personal');
+        return view('personal', [
+            'setting' => Schema::hasTable('settings') ? Setting::query()->first() : null,
+        ]);
     }
 
     public function workAlbum(Album $album)
@@ -89,12 +101,12 @@ class PublicController extends Controller
         return view('contact', compact('setting'));
     }
 
-    public function contactSubmit(ContactRequest $request): RedirectResponse
+    public function contactSubmit(ContactRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
 
         if (! empty($data['website'])) {
-            return back()->with('status', 'success-message');
+            return $this->contactFinish($request, true);
         }
 
         Contact::query()->create([
@@ -103,14 +115,37 @@ class PublicController extends Controller
             'message' => $data['message'],
         ]);
 
-        Mail::to(config('services.contact.recipient'))
-            ->send(new ContactMessageMail(
-                name: $data['name'],
-                email: $data['email'],
-                messageBody: $data['message'],
-            ));
+        $recipient = Schema::hasTable('settings')
+            ? Setting::query()->value('email')
+            : null;
 
-        return back()->with('status', 'success-message');
+        try {
+            Mail::to($recipient ?: config('services.contact.recipient'))
+                ->send(new ContactMessageMail(
+                    name: $data['name'],
+                    email: $data['email'],
+                    messageBody: $data['message'],
+                ));
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->contactFinish($request, false);
+        }
+
+        return $this->contactFinish($request, true);
+    }
+
+    private function contactFinish(Request $request, bool $ok): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return $ok
+                ? response()->json(['status' => 'success-message'])
+                : response()->json(['message' => 'Invio non riuscito. Riprova più tardi.'], 500);
+        }
+
+        return $ok
+            ? back()->with('status', 'success-message')
+            : back()->withInput()->withErrors(['message' => 'Invio non riuscito. Riprova più tardi.']);
     }
 
     private function album(Album $album, AlbumType $type, string $view)
