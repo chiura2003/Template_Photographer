@@ -10,12 +10,18 @@ document.querySelectorAll(".gallery-container").forEach(section => {
 
     const images = track.querySelectorAll("img");
     const gap = 20;
+    const jump = 2;
     let currentIndex = 0;
 
     updateButtons();
 
+    function visibleCount(){
+        const card = track.children[0];
+        return Math.max(1, Math.round(viewport.clientWidth / ((card ? card.offsetWidth : 1) + gap)));
+    }
+
     function maxIndex(){
-        return Math.max(0, images.length - 1);
+        return Math.max(0, images.length - visibleCount());
     }
 
     function updateButtons(){
@@ -29,14 +35,15 @@ document.querySelectorAll(".gallery-container").forEach(section => {
         const step = track.children[0] ? track.children[0].offsetWidth + gap : 1;
         const isMobile = window.matchMedia("(max-width: 575.98px)").matches;
         const active = isMobile
-            ? Math.max(0, Math.min(dots.length - 1, Math.round(viewport.scrollLeft / step)))
-            : currentIndex;
+            ? Math.min(Math.max(0, Math.round(viewport.scrollLeft / step)), dots.length - 1)
+            : Math.min(Math.floor(currentIndex / jump), dots.length - 1);
         dots.forEach((dot, i) => {
             dot.classList.toggle("is-active", i === active);
         });
     }
 
     function updateSlider() {
+        currentIndex = Math.max(0, Math.min(currentIndex, maxIndex()));
         const cardWidth = track.children[0].offsetWidth;
         const distance = currentIndex * (cardWidth + gap);
         track.style.transform = `translateX(-${distance}px)`;
@@ -45,25 +52,29 @@ document.querySelectorAll(".gallery-container").forEach(section => {
     }
 
     next.addEventListener("click", () => {
-        if(currentIndex < maxIndex()){
-            currentIndex++;
-            updateSlider();
-        }
+        currentIndex = Math.min(currentIndex + jump, maxIndex());
+        updateSlider();
     });
 
     prev.addEventListener("click", () => {
-        if(currentIndex > 0){
-            currentIndex--;
-            updateSlider();
-        }
+        currentIndex = Math.max(currentIndex - jump, 0);
+        updateSlider();
     });
 
-    /* --- puntini di paginazione (uno per album, mobile e desktop) --- */
+    /* --- puntini di paginazione (uno per salto, desktop e mobile) --- */
     if (dotsWrap) {
         const mqMobile = window.matchMedia("(max-width: 575.98px)");
 
+        function dotCount() {
+            if (mqMobile.matches) {
+                return images.length;
+            }
+            const toScroll = Math.max(0, images.length - visibleCount());
+            return Math.max(1, Math.floor(toScroll / jump) + 1);
+        }
+
         function buildDots() {
-            const totalPages = Math.max(1, images.length);
+            const totalPages = dotCount();
 
             dotsWrap.innerHTML = "";
 
@@ -72,13 +83,13 @@ document.querySelectorAll(".gallery-container").forEach(section => {
                 dot.className = "gallery-dot";
                 dot.setAttribute("role", "button");
                 dot.setAttribute("tabindex", "0");
-                dot.setAttribute("aria-label", `Vai all'album ${i + 1} di ${totalPages}`);
+                dot.setAttribute("aria-label", `Vai alla posizione ${i + 1} di ${totalPages}`);
                 dot.addEventListener("click", () => {
                     if (mqMobile.matches) {
                         const step = track.children[0].offsetWidth + gap;
                         viewport.scrollTo({ left: i * step, behavior: "smooth" });
                     } else {
-                        currentIndex = i;
+                        currentIndex = Math.min(i * jump, maxIndex());
                         updateSlider();
                     }
                 });
@@ -103,6 +114,12 @@ document.querySelectorAll(".gallery-container").forEach(section => {
         });
 
         viewport.addEventListener("scroll", updateDots, { passive: true });
+
+        window.addEventListener("resize", () => {
+            currentIndex = Math.min(currentIndex, maxIndex());
+            buildDots();
+            updateSlider();
+        });
     }
 
     /* --- piccolo "nudge" per far capire che si può scorrere (mobile) --- */

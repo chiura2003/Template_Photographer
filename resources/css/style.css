@@ -227,7 +227,9 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
     .photo-composition .cell img,
-    .photo-composition .cell::after {
+    .photo-composition .cell::after,
+    .album-photo-grid figure img,
+    .album-photo-grid figure::after {
         transition: none;
     }
 }
@@ -491,23 +493,23 @@ LIGHTBOX
 
 .gallery-dot {
     display: block;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba(25, 24, 23, 0.22);
+    background: #d1d1d1;
     cursor: pointer;
     transition: background .25s ease, transform .25s ease;
 }
 
 .gallery-dot.is-active {
-    background: #666;
-    transform: scale(1.2);
+    background: var(--color-text);
+    transform: scale(1.3);
 }
 
 .gallery-dot:hover {
-    background: rgba(25, 24, 23, 0.5);
+    background: #999;
 }
 
 .gallery-dot:focus-visible {
@@ -650,6 +652,35 @@ LIGHTBOX
     margin: 0;
     background: var(--color-soft);
     overflow: hidden;
+    position: relative;
+}
+
+.album-photo-grid figure img {
+    transition: transform .55s ease;
+}
+
+.album-photo-grid figure::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(25, 24, 23, 0.30),
+        rgba(25, 24, 23, 0) 50%
+    );
+    opacity: 0;
+    transition: opacity .45s ease;
+    pointer-events: none;
+}
+
+.album-photo-grid figure:hover img,
+.album-photo-grid figure:focus-within img {
+    transform: scale(1.04);
+}
+
+.album-photo-grid figure:hover::after,
+.album-photo-grid figure:focus-within::after {
+    opacity: 1;
 }
 
 .album-photo-grid img {
@@ -662,10 +693,6 @@ LIGHTBOX
 
 .album-empty {
     margin: 0;
-}
-
-.gallery-dots{
-    display:none;
 }
 
 /* ==========================
@@ -959,39 +986,11 @@ CONTACT
 
     padding:28px 0;
 
-    position:relative;
-
-}
-
-.contact-item::after{
-
-    content:"";
-
-    position:absolute;
-
-    left:0;
-
-    right:0;
-
-    bottom:0;
-
-    margin:0 auto;
-
-    width:55%;
-
-    height:1px;
-
-    background:#a8a29a;
-
-}
-
-.contact-item:last-child::after{
-
-    display:none;
-
 }
 
 .contact-item > span:not(.contact-label) {
+
+    position: relative;
 
     cursor: default;
 
@@ -1023,7 +1022,8 @@ CONTACT
 
 }
 
-.contact-item > a::after{
+.contact-item > a::after,
+.contact-item > span:not(.contact-label)::after{
 
     content:"";
 
@@ -1048,12 +1048,14 @@ CONTACT
 }
 
 .contact-item a:hover,
-.contact-item a:focus-visible{
+.contact-item a:focus-visible,
+.contact-item > span:not(.contact-label):hover{
     color:#555;
 }
 
 .contact-item a:hover::after,
-.contact-item a:focus-visible::after{
+.contact-item a:focus-visible::after,
+.contact-item > span:not(.contact-label):hover::after{
 
     transform:scaleX(1);
 
@@ -1554,24 +1556,8 @@ REVEAL IMMAGINI
     .gallery-track .personal-album-image img {
         width: 100%;
     }
- .gallery-dots{
-        display:flex;
-        justify-content:center;
-        gap:8px;
-        margin-top:16px;
-    }
-
-    .gallery-dot{
-        width:6px;
-        height:6px;
-        border-radius:50%;
-        background: var(--color-line);
-        transition: background .25s ease, transform .25s ease;
-    }
-
-    .gallery-dot.is-active{
-        background: var(--color-text);
-        transform: scale(1.3);
+    .gallery-dots {
+        margin-top: 16px;
     }
 
     .album-photo-grid {
